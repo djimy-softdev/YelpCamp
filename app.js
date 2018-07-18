@@ -1,38 +1,64 @@
 var express = require("express");
 var app = express();
 var bodyParser = require("body-parser");
+var mg = require("mongoose");
 
+mg.connect("mongodb://localhost:27017/yelpcamp", { useNewUrlParser: true });
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
+
+//SETUP SCHEMA
+var campSchema = new mg.Schema({
+    name: String,
+    image: String
+});
+
+var camps = mg.model("camps", campSchema);
+/*
+camps.create(
+    {
+        name: "djimy",
+        image: "https://images.pexels.com/photos/1229942/pexels-photo-1229942.jpeg?auto=compress&cs=tinysrgb&h=350"
+    },
+    function (err, camp) {
+        if(err){
+            console.log(err);
+        } else {
+            console.log("newly created campgrounds");
+            console.log(camp);
+        }
+    }
+);
+*/
 
 //landing page
 app.get("/", function (req, res) {
    res.render("landing"); 
 });
 
-//campgrounds
-var campgrounds = [
-    {name: "camp1", image: "https://images.pexels.com/photos/1229942/pexels-photo-1229942.jpeg?auto=compress&cs=tinysrgb&h=350"},
-    {name: "camp2", image: "https://images.pexels.com/photos/1228497/pexels-photo-1228497.jpeg?auto=compress&cs=tinysrgb&h=350"},
-    {name: "camp3", image: "https://images.pexels.com/photos/1228483/pexels-photo-1228483.jpeg?auto=compress&cs=tinysrgb&h=350"},
-    {name: "camp4", image: "https://images.pexels.com/photos/813231/pexels-photo-813231.jpeg?auto=compress&cs=tinysrgb&h=350"},
-    {name: "camp5", image: "https://images.pexels.com/photos/1229177/pexels-photo-1229177.jpeg?auto=compress&cs=tinysrgb&h=350"},
-];
-
 app.get("/campgrounds", function (req, res) {
-    
-
-    res.render("campgrounds", {camps: campgrounds});
+    //get all camps from the database
+    camps.find({}, function (err, campgrounds) {
+        if(err){
+            console.log(err);
+        } else {
+            res.render("campgrounds", {camps: campgrounds});
+        }
+    });
 })
 
 app.post("/campgrounds", function (req, res) {
     //get data from form and add to camps
     var name = req.body.name;
     var image = req.body.image;
-    campgrounds.push({name: name, image: image});
-
-    //redirect to campgrounds page
-    res.redirect("/campgrounds");
+    var newCamp = {name: name, image: image};
+    camps.create(newCamp, function (err, newCamp) {
+        if(err){
+            console.log(err);
+        } else {
+            res.redirect("/campgrounds");
+        }
+    });
 });
 
 app.get("/campgrounds/new", function (req, res) {
